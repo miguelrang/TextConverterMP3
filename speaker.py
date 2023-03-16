@@ -59,7 +59,7 @@ class Speaker(Screen):
 			if file != '':
 				if re.compile(r'(.?)+\.mp3').fullmatch(file):
 					if text != '':	
-						gTTS(text=text, lang="es", slow=False).save(f"{file}.mp3")
+						gTTS(text=text, lang="es", slow=False).save(file)
 						
 					else:
 						self.openAlert(
