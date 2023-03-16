@@ -8,11 +8,13 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
 from kivy.core.window import Window
+from kivy.clock import mainthread
 
 from gtts import gTTS
 from pygame import mixer
 import threading
 import os
+import re
 
 
 class WindowManager(ScreenManager):
@@ -41,45 +43,47 @@ class Speaker(Screen):
 		)
 		self.dialog.open()
 
-
 	def load(self):
 		active:bool = not self.ids.loading.active
 		self.ids.loading.active = active
 		for id in ['save', 'play', 'stop']:
 			self.ids[id].disabled = active
 
-	
+	@mainthread
 	def saveAudio(self, file:str, text:str):# -> mp3
 		ofile = file
 		otext = text
 		file = file.text
 		text = text.text
-		if file != '':
-			if not(set(file) & set('¬°|!"#$%&/()=\'?\\¿¡´¨+*~{[^}]`,;.:-_<>')):
-				if text != '':	
-					gTTS(text=text, lang="es", slow=False).save(f"{file}.mp3")
-					#os.remove(f"{file}.mp3")
-					
-					#ofile.text = ''
-					#otext.text = ''
-
+		try:
+			if file != '':
+				if re.compile(r'(.?)+\.mp3').fullmatch(file):
+					if text != '':	
+						gTTS(text=text, lang="es", slow=False).save(f"{file}.mp3")
+						
+					else:
+						self.openAlert(
+							title='Atención',
+							text='El campo: \'Enunciado\', esta vacío.'
+						)
 				else:
 					self.openAlert(
 						title='Atención',
-						text='El campo: \'Enunciado\', esta vacío.'
+						text='El formato del archivo no es valido.'
 					)
 			else:
 				self.openAlert(
 					title='Atención',
-					text='No se aceptan caracteres especiales.'
+					text='El campo: \'Nombre_del_Archivo.mp3\', esta vacío.'
 				)
-		else:
-			self.openAlert(
-				title='Atención',
-				text='El campo: \'Nombre del Archivo\', esta vacío.'
-			)
 
-		self.load()
+		except:
+			self.openAlert(
+				title='¡Lo Sentimos!',
+				text='Ah ocurrido un error al guardar el audio.'
+			)
+		finally:
+			self.load()
 
 
 	def playAudio(self, file:str, stop):
@@ -140,7 +144,7 @@ WindowManager:
 					id: file
 					name: 'file'
 
-					hint_text: 'Nombre del Archivo'
+					hint_text: 'Nombre_del_Archivo.mp3'
 					on_text: file.text = file.text.replace(' ', '')
 					pos_hint: {'center_x': .5, 'center_y': .5}
 
